@@ -1,7 +1,8 @@
 streamlit
 langchain
-langchain_ollama
-langchain_together
+langchain-community
+langchain-ollama
+together
 openai
 selenium
 beautifulsoup4
