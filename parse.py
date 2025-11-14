@@ -34,6 +34,6 @@ def parse_with_together(dom_chunks, parse_description):
             {"dom_content": chunk, "parse_description": parse_description}
         )
         print(f"Parsed batch: {i} of {len(dom_chunks)}")
-        parsed_results.append(response.content)  # ✅ Fix here
+        parsed_results.append(response.content)  # AIMessage.content
 
     return "\n".join(parsed_results)
