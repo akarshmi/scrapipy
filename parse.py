@@ -1,77 +1,92 @@
-from langchain_community.llms import Together
-from langchain_core.prompts import ChatPromptTemplate
+"""
+parse.py  —  AI extraction powered by Google Gemini (free tier)
+
+Free API key:  https://aistudio.google.com/app/apikey
+Set env var:   GEMINI_API_KEY=your_key_here
+"""
+
 import os
+import json
 import re
+import google.generativeai as genai
 
-api_key = os.getenv("TOGETHER_API_KEY")
+_configured = False
 
-PARSE_TEMPLATE = (
-    "You are an expert data extraction assistant. Extract ONLY the requested information "
-    "from the web page content below. Be precise, structured, and concise.\n\n"
-    "WEB PAGE CONTENT:\n{dom_content}\n\n"
-    "EXTRACTION TASK: {parse_description}\n\n"
-    "RULES:\n"
-    "1. Extract ONLY what matches the task. Nothing extra.\n"
-    "2. If extracting multiple items, use a clear list format.\n"
-    "3. If nothing matches, return exactly: NO_MATCH\n"
-    "4. Preserve original formatting for prices, dates, and numbers.\n"
-    "5. Do NOT add commentary, preamble, or explanations."
-)
+def _setup():
+    global _configured
+    if _configured:
+        return
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        raise ValueError(
+            "GEMINI_API_KEY not set. Get a free key at https://aistudio.google.com/app/apikey "
+            "then run:  export GEMINI_API_KEY=your_key"
+        )
+    genai.configure(api_key=key)
+    _configured = True
 
-SUMMARIZE_TEMPLATE = (
-    "Summarize the following web page content. Be concise and structured.\n\n"
-    "CONTENT:\n{dom_content}\n\n"
-    "Provide:\n"
-    "1. A 2-3 sentence overview\n"
-    "2. Key topics covered (bullet points)\n"
-    "3. Most important facts or data points\n"
-    "4. Sentiment/tone of the content"
-)
 
-def _get_model(temperature=0.1, max_tokens=1024):
-    if not api_key:
-        raise ValueError("TOGETHER_API_KEY not set in environment")
-    return Together(
-        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-        temperature=temperature,
-        max_tokens=max_tokens,
-        together_api_key=api_key,
-    )
+def _model():
+    _setup()
+    return genai.GenerativeModel("gemini-1.5-flash")   # free-tier model
 
-def parse_with_together(dom_chunks, parse_description):
-    """Extract specific information from DOM chunks."""
-    prompt = ChatPromptTemplate.from_template(PARSE_TEMPLATE)
-    model = _get_model()
-    chain = prompt | model
-    parsed = []
 
-    for i, chunk in enumerate(dom_chunks, start=1):
-        print(f"Parsing chunk {i}/{len(dom_chunks)}...")
+EXTRACT_PROMPT = """\
+You are a precise data extraction assistant.
+
+WEB PAGE CONTENT:
+{content}
+
+EXTRACTION TASK:
+{task}
+
+RULES:
+- Return ONLY the extracted data, nothing else.
+- If multiple items match, list each on its own line.
+- Preserve original formatting for prices, dates, and numbers.
+- If nothing matches the task, return exactly: NO_MATCH
+"""
+
+SUMMARIZE_PROMPT = """\
+Summarize the following web page content. Be structured and concise.
+
+CONTENT:
+{content}
+
+Return:
+1. A 2-3 sentence overview of the page
+2. Key topics covered
+3. Most important facts or data points
+4. Overall tone of the page
+"""
+
+
+def parse_with_gemini(dom_chunks, parse_description):
+    """Extract specific data from page chunks using Gemini."""
+    model = _model()
+    results = []
+
+    for i, chunk in enumerate(dom_chunks, 1):
+        print(f"Processing chunk {i}/{len(dom_chunks)} ...")
+        prompt = EXTRACT_PROMPT.format(content=chunk, task=parse_description)
         try:
-            response = chain.invoke({
-                "dom_content": chunk,
-                "parse_description": parse_description,
-            })
-            text = response.content if hasattr(response, "content") else str(response)
-            text = text.strip()
+            response = model.generate_content(prompt)
+            text = response.text.strip()
             if text and text != "NO_MATCH":
-                parsed.append(text)
-        except Exception as e:
-            print(f"  ⚠️ Chunk {i} failed: {e}")
+                results.append(text)
+        except Exception as exc:
+            print(f"  Chunk {i} error: {exc}")
 
-    return "\n\n".join(parsed) if parsed else "No matching content found."
+    return "\n\n".join(results) if results else "No matching content found."
 
 
-def summarize_with_together(dom_chunks):
-    """Generate a structured summary of the page content."""
-    prompt = ChatPromptTemplate.from_template(SUMMARIZE_TEMPLATE)
-    model = _get_model(temperature=0.3, max_tokens=1500)
-    chain = prompt | model
-
-    # For summary, use first 3 chunks max to stay focused
-    combined = "\n\n".join(dom_chunks[:3])
+def summarize_with_gemini(dom_chunks):
+    """Generate a structured summary from the first few chunks."""
+    model = _model()
+    combined = "\n\n".join(dom_chunks[:3])[:12000]
+    prompt = SUMMARIZE_PROMPT.format(content=combined)
     try:
-        response = chain.invoke({"dom_content": combined})
-        return response.content if hasattr(response, "content") else str(response)
-    except Exception as e:
-        return f"Summary failed: {e}"
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as exc:
+        return f"Summary failed: {exc}"
