@@ -26,7 +26,7 @@ st.set_page_config(
 
 # ── Typography + Design System ────────────────────────────────────────────────
 st.markdown("""
-
+<style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -538,7 +538,7 @@ section[data-testid="stSidebar"] .stButton button:hover {
     background: linear-gradient(135deg, #e85d3f, #ff7b5a) !important;
     box-shadow: 0 4px 15px rgba(200, 75, 47, 0.4) !important;
 }
-
+</style>
 """, unsafe_allow_html=True)
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
