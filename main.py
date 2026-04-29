@@ -3,6 +3,7 @@ import json
 import time
 import pandas as pd
 from datetime import datetime
+
 from scrape import (
     scrape_website,
     extract_body_content,
@@ -13,674 +14,819 @@ from scrape import (
     split_dom_content,
     scrape_multiple_urls,
 )
-from parse import parse_with_together, summarize_with_together
+from parse import parse_with_gemini, summarize_with_gemini
 
-# ─── Page Config ─────────────────────────────────────────────────────────────
+# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="NexScrape · AI Web Intelligence",
-    page_icon="⚡",
+    page_title="Scrapipy",
+    page_icon="S",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ─── Custom CSS ───────────────────────────────────────────────────────────────
+# ── Typography + Design System ────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body, [class*="css"] {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Syne', sans-serif;
+    background: #f5f2ec;
+    color: #1a1a1a;
 }
 
-/* Dark tech theme */
-.stApp {
-    background: #090c14;
-    color: #e2e8f0;
-}
+.stApp { background: #f5f2ec; }
 
-/* Sidebar */
+/* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: #0d1117 !important;
-    border-right: 1px solid #1e2d45;
+    background: #1a1a1a !important;
+    border-right: none;
 }
+section[data-testid="stSidebar"] * {
+    color: #c8c0b0 !important;
+}
+section[data-testid="stSidebar"] .stTextArea textarea,
+section[data-testid="stSidebar"] .stSelectbox > div > div {
+    background: #2a2a2a !important;
+    border-color: #3a3a3a !important;
+    color: #c8c0b0 !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.78rem !important;
+}
+section[data-testid="stSidebar"] .stSlider > div { filter: invert(0.85); }
 
-/* Main header */
-.main-header {
-    font-family: 'Space Mono', monospace;
-    font-size: 2.8rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2ff7 50%, #ff6b6b 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -2px;
+/* ── Wordmark ── */
+.wordmark {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 3.8rem;
+    letter-spacing: -4px;
+    color: #1a1a1a;
+    line-height: 1;
     margin-bottom: 0;
 }
-
-.sub-header {
-    color: #4a6fa5;
-    font-size: 0.85rem;
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-top: 0;
+.wordmark span {
+    color: #c84b2f;
 }
-
-/* Metric cards */
-.metric-card {
-    background: #0d1421;
-    border: 1px solid #1e2d45;
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
-    margin: 0.4rem 0;
-    transition: border-color 0.2s;
-}
-.metric-card:hover { border-color: #00d4ff44; }
-.metric-label {
-    color: #4a6fa5;
+.tagline {
+    font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-family: 'Space Mono', monospace;
-}
-.metric-value {
-    color: #00d4ff;
-    font-size: 1.6rem;
-    font-weight: 700;
-    font-family: 'Space Mono', monospace;
-}
-
-/* Status badges */
-.badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    font-family: 'Space Mono', monospace;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-.badge-success { background: #003322; color: #00ff88; border: 1px solid #00ff8844; }
-.badge-info    { background: #001833; color: #00d4ff; border: 1px solid #00d4ff44; }
-.badge-warn    { background: #332200; color: #ffaa00; border: 1px solid #ffaa0044; }
-
-/* Section headers */
-.section-title {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
     letter-spacing: 3px;
+    color: #888;
     text-transform: uppercase;
-    color: #4a6fa5;
-    border-bottom: 1px solid #1e2d45;
-    padding-bottom: 0.5rem;
-    margin: 1.5rem 0 1rem 0;
+    margin-top: 6px;
 }
 
-/* URL input styling */
+/* ── URL bar ── */
 .stTextInput input {
-    background: #0d1421 !important;
-    border: 1px solid #1e2d45 !important;
-    border-radius: 8px !important;
-    color: #e2e8f0 !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: 0.85rem !important;
+    background: #fff !important;
+    border: 1.5px solid #1a1a1a !important;
+    border-radius: 0 !important;
+    color: #1a1a1a !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.9rem !important;
+    padding: 0.7rem 1rem !important;
+    transition: border-color 0.15s;
 }
 .stTextInput input:focus {
-    border-color: #00d4ff !important;
-    box-shadow: 0 0 0 2px #00d4ff22 !important;
+    border-color: #c84b2f !important;
+    box-shadow: none !important;
 }
 
-/* Buttons */
+/* ── Buttons ── */
 .stButton button {
-    background: linear-gradient(135deg, #00d4ff22, #7b2ff722) !important;
-    border: 1px solid #00d4ff66 !important;
-    color: #00d4ff !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: 0.8rem !important;
+    background: #1a1a1a !important;
+    color: #f5f2ec !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
     letter-spacing: 2px !important;
     text-transform: uppercase !important;
-    border-radius: 8px !important;
-    transition: all 0.2s !important;
+    padding: 0.65rem 1.4rem !important;
+    transition: background 0.15s !important;
 }
 .stButton button:hover {
-    background: linear-gradient(135deg, #00d4ff44, #7b2ff744) !important;
-    border-color: #00d4ff !important;
-    transform: translateY(-1px) !important;
+    background: #c84b2f !important;
 }
 
-/* Expander */
-.streamlit-expanderHeader {
-    background: #0d1421 !important;
-    border: 1px solid #1e2d45 !important;
-    border-radius: 8px !important;
-    color: #8892a4 !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: 0.78rem !important;
-    letter-spacing: 1px !important;
+/* ── Stat cards ── */
+.stat-row { display: flex; gap: 1px; margin: 1.5rem 0; background: #d4d0c8; }
+.stat-card {
+    background: #f5f2ec;
+    flex: 1;
+    padding: 1.2rem 1.4rem;
+    border-bottom: 3px solid transparent;
+    transition: border-color 0.2s;
+}
+.stat-card:hover { border-bottom-color: #c84b2f; }
+.stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2.5px;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.stat-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: #1a1a1a;
+    line-height: 1;
 }
 
-/* Tabs */
+/* ── Section label ── */
+.sec-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #888;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #d4d0c8;
+    margin: 1.8rem 0 1rem;
+}
+
+/* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: #0d1117;
-    border-bottom: 1px solid #1e2d45;
+    background: transparent;
+    border-bottom: 1px solid #d4d0c8;
     gap: 0;
 }
 .stTabs [data-baseweb="tab"] {
-    color: #4a6fa5;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 2px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
-    padding: 0.6rem 1.2rem;
+    color: #888;
+    padding: 0.7rem 1.4rem;
+    background: transparent;
+    border-radius: 0;
 }
 .stTabs [aria-selected="true"] {
-    color: #00d4ff !important;
-    border-bottom: 2px solid #00d4ff !important;
+    color: #1a1a1a !important;
+    border-bottom: 2px solid #c84b2f !important;
+    background: transparent !important;
 }
 
-/* Text areas */
+/* ── Text areas ── */
 .stTextArea textarea {
-    background: #0d1421 !important;
-    border: 1px solid #1e2d45 !important;
-    color: #e2e8f0 !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: 0.78rem !important;
-    border-radius: 8px !important;
+    background: #fff !important;
+    border: 1.5px solid #d4d0c8 !important;
+    border-radius: 0 !important;
+    color: #1a1a1a !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.8rem !important;
+}
+.stTextArea textarea:focus {
+    border-color: #1a1a1a !important;
+    box-shadow: none !important;
 }
 
-/* Select box */
-.stSelectbox > div > div {
-    background: #0d1421 !important;
-    border: 1px solid #1e2d45 !important;
-    color: #e2e8f0 !important;
-    border-radius: 8px !important;
+/* ── Expander ── */
+.streamlit-expanderHeader {
+    background: #fff !important;
+    border: 1px solid #d4d0c8 !important;
+    border-radius: 0 !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.72rem !important;
+    color: #444 !important;
+    letter-spacing: 1px !important;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #090c14; }
-::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #00d4ff44; }
-
-/* Result box */
-.result-box {
-    background: #0d1421;
-    border: 1px solid #1e2d45;
-    border-left: 3px solid #00d4ff;
-    border-radius: 8px;
-    padding: 1rem 1.2rem;
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.9rem;
-    line-height: 1.7;
+/* ── Result display ── */
+.result-block {
+    background: #fff;
+    border-left: 3px solid #c84b2f;
+    padding: 1.2rem 1.4rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
     white-space: pre-wrap;
     word-break: break-word;
-    max-height: 500px;
+    max-height: 480px;
     overflow-y: auto;
+    color: #1a1a1a;
 }
 
-/* Info/success/error overrides */
+/* ── Page info card ── */
+.page-card {
+    background: #fff;
+    border: 1px solid #d4d0c8;
+    padding: 1.2rem 1.4rem;
+    margin: 1rem 0;
+}
+.page-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+.page-card-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* ── Method badge ── */
+.method-badge {
+    display: inline-block;
+    background: #1a1a1a;
+    color: #f5f2ec;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+}
+
+/* ── Heading structure ── */
+.heading-row {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    padding: 3px 0;
+    color: #1a1a1a;
+    border-bottom: 1px dashed #e8e4dc;
+}
+.heading-row .lvl { color: #c84b2f; margin-right: 6px; }
+
+/* ── Selectbox ── */
+.stSelectbox > div > div {
+    border-radius: 0 !important;
+    border-color: #d4d0c8 !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.82rem !important;
+}
+
+/* ── Radio ── */
+.stRadio label {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 1px !important;
+}
+
+/* ── Divider ── */
+hr { border-color: #d4d0c8 !important; margin: 1.5rem 0 !important; }
+
+/* ── Alerts ── */
 .stAlert {
-    border-radius: 8px !important;
-    font-family: 'Space Mono', monospace !important;
+    border-radius: 0 !important;
+    font-family: 'DM Mono', monospace !important;
     font-size: 0.78rem !important;
 }
 
-/* Divider */
-hr { border-color: #1e2d45 !important; margin: 1.5rem 0 !important; }
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #f5f2ec; }
+::-webkit-scrollbar-thumb { background: #d4d0c8; }
+::-webkit-scrollbar-thumb:hover { background: #c84b2f; }
 
-/* Hide Streamlit branding */
+/* ── Hide default Streamlit UI chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
+
+/* ── Download buttons ── */
+.stDownloadButton button {
+    background: transparent !important;
+    color: #1a1a1a !important;
+    border: 1.5px solid #1a1a1a !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    border-radius: 0 !important;
+}
+.stDownloadButton button:hover {
+    background: #1a1a1a !important;
+    color: #f5f2ec !important;
+}
+
+/* ── Toggle ── */
+.stToggle label { font-family: 'DM Mono', monospace !important; font-size: 0.78rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── Sidebar ──────────────────────────────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-    <div style='text-align:center; padding: 1rem 0;'>
-        <div style='font-family: Space Mono; font-size:1.4rem; color:#00d4ff;'>⚡ NEX</div>
-        <div style='font-size:0.65rem; color:#4a6fa5; letter-spacing:4px;'>SCRAPE CONFIG</div>
+    <div style='padding: 1.5rem 0 1rem;'>
+        <div style='font-family: Syne; font-weight: 800; font-size: 1.5rem;
+             letter-spacing: -1px; color: #f5f2ec;'>
+            Scrapi<span style='color:#c84b2f;'>py</span>
+        </div>
+        <div style='font-family: DM Mono; font-size: 0.6rem; letter-spacing: 3px;
+             color: #555; text-transform: uppercase; margin-top: 4px;'>
+            Configuration
+        </div>
     </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
-    st.markdown('<div class="section-title">⚙ Scraper Settings</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2.5px;'
+                'text-transform:uppercase;color:#555;margin-bottom:0.8rem;">Scraper</div>',
+                unsafe_allow_html=True)
+
     force_selenium = st.toggle("Force Selenium (JS sites)", value=False)
-    wait_time = st.slider("JS render wait (sec)", 1, 10, 3)
-    aggressive_clean = st.toggle("Aggressive cleaning (articles)", value=True)
-    chunk_size = st.select_slider("Chunk size", options=[3000, 4000, 6000, 8000, 10000], value=6000)
-
-    st.divider()
-    st.markdown('<div class="section-title">🧠 AI Settings</div>', unsafe_allow_html=True)
-    ai_enabled = st.toggle("Enable AI Parsing", value=True)
-    if not ai_enabled:
-        st.caption("AI parsing disabled — raw extraction only")
-
-    st.divider()
-    st.markdown('<div class="section-title">📋 Batch Mode</div>', unsafe_allow_html=True)
-    batch_urls_raw = st.text_area(
-        "Batch URLs (one per line)",
-        height=100,
-        placeholder="https://example.com\nhttps://another.com",
-        help="Scrape multiple URLs sequentially"
+    wait_time = st.slider("JS render wait (s)", 1, 10, 3)
+    aggressive_clean = st.toggle("Aggressive cleaning", value=True)
+    chunk_size = st.select_slider(
+        "Chunk size (chars)", options=[3000, 4000, 6000, 8000, 10000], value=6000
     )
-    batch_delay = st.slider("Delay between requests (sec)", 0.5, 5.0, 1.5)
 
-    if st.button("▶ RUN BATCH", use_container_width=True):
-        urls = [u.strip() for u in batch_urls_raw.strip().splitlines() if u.strip()]
+    st.divider()
+
+    st.markdown('<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2.5px;'
+                'text-transform:uppercase;color:#555;margin-bottom:0.8rem;">AI Engine</div>',
+                unsafe_allow_html=True)
+
+    gemini_key = st.text_input(
+        "Gemini API Key",
+        type="password",
+        placeholder="AIza...",
+        help="Free key: https://aistudio.google.com/app/apikey",
+    )
+    if gemini_key:
+        import os
+        os.environ["GEMINI_API_KEY"] = gemini_key
+
+    ai_enabled = bool(gemini_key or __import__("os").getenv("GEMINI_API_KEY"))
+    if ai_enabled:
+        st.success("AI ready")
+    else:
+        st.caption("Enter a Gemini API key to enable AI parsing.")
+
+    st.divider()
+
+    st.markdown('<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2.5px;'
+                'text-transform:uppercase;color:#555;margin-bottom:0.8rem;">Batch Mode</div>',
+                unsafe_allow_html=True)
+
+    batch_raw = st.text_area(
+        "URLs, one per line",
+        height=90,
+        placeholder="https://example.com\nhttps://another.com",
+        label_visibility="collapsed",
+    )
+    batch_delay = st.slider("Delay between requests (s)", 0.5, 5.0, 1.5)
+
+    if st.button("Run Batch", use_container_width=True):
+        urls = [u.strip() for u in batch_raw.strip().splitlines() if u.strip()]
         if urls:
             with st.spinner(f"Scraping {len(urls)} URLs..."):
                 results = scrape_multiple_urls(urls, delay=batch_delay)
                 st.session_state.batch_results = results
-                st.success(f"✓ {len(results)} URLs scraped")
+            st.success(f"{len(results)} URLs done")
         else:
             st.warning("Enter at least one URL")
 
-    # Show batch results download
     if "batch_results" in st.session_state:
-        data = [{
-            "url": r.get("url",""),
-            "method": r.get("method",""),
-            "error": r.get("error",""),
-            "text_preview": r.get("text","")[:300],
-        } for r in st.session_state.batch_results]
-        df = pd.DataFrame(data)
+        df = pd.DataFrame([{
+            "url": r.get("url", ""),
+            "method": r.get("method", ""),
+            "error": r.get("error", ""),
+            "preview": r.get("text", "")[:200],
+        } for r in st.session_state.batch_results])
         st.download_button(
-            "⬇ Download Batch CSV",
+            "Download CSV",
             df.to_csv(index=False),
-            file_name="batch_results.csv",
+            file_name="batch.csv",
             mime="text/csv",
             use_container_width=True,
         )
 
-# ─── Main Header ──────────────────────────────────────────────────────────────
-col_logo, col_title = st.columns([1, 5])
-with col_title:
-    st.markdown('<h1 class="main-header">NexScrape</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">// AI-Powered Web Intelligence Engine</p>', unsafe_allow_html=True)
+# ── Header ────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style='padding: 2.5rem 0 1rem;'>
+    <div class='wordmark'>Scrapi<span>py</span></div>
+    <div class='tagline'>Web Intelligence, Extracted</div>
+</div>
+""", unsafe_allow_html=True)
 
-st.divider()
+st.markdown('<div style="height:1px;background:#d4d0c8;margin-bottom:1.5rem;"></div>',
+            unsafe_allow_html=True)
 
-# ─── URL Input ────────────────────────────────────────────────────────────────
+# ── URL Input ─────────────────────────────────────────────────────────────────
 col_url, col_btn = st.columns([5, 1])
 with col_url:
     url = st.text_input(
         "",
-        placeholder="https://target-site.com",
+        placeholder="Enter a URL  —  https://example.com",
         label_visibility="collapsed",
         key="url_input",
     )
 with col_btn:
-    scrape_btn = st.button("⚡ SCRAPE", use_container_width=True)
+    scrape_btn = st.button("Fetch", use_container_width=True)
 
-# ─── Scrape Execution ─────────────────────────────────────────────────────────
+# ── Execute Scrape ────────────────────────────────────────────────────────────
 if scrape_btn:
     if not url:
-        st.warning("Enter a URL first")
+        st.warning("Please enter a URL.")
     else:
-        with st.spinner("Initializing scrape sequence..."):
-            progress = st.progress(0, text="Connecting...")
+        bar = st.progress(0, text="Connecting...")
+        try:
+            bar.progress(15, text="Fetching page...")
+            result = scrape_website(url, use_selenium=force_selenium, wait_time=wait_time)
+
+            bar.progress(55, text="Extracting content...")
+            html = result["html"]
+            if not html:
+                raise ValueError("No HTML returned. The site may be blocking scrapers.")
+
+            body      = extract_body_content(html)
+            cleaned   = clean_body_content(body, aggressive=aggressive_clean)
+            article   = extract_article_content(html)
+            metadata  = extract_metadata(html, url)
+            structured = extract_structured_data(html)
+
+            bar.progress(90, text="Finalizing...")
+            time.sleep(0.2)
+
+            st.session_state.update({
+                "html": html,
+                "body": body,
+                "cleaned": cleaned,
+                "article": article,
+                "metadata": metadata,
+                "structured": structured,
+                "chunks": split_dom_content(cleaned, chunk_size),
+                "result": result,
+                "scraped_url": url,
+            })
+            bar.progress(100)
             time.sleep(0.3)
-            progress.progress(20, text="Fetching page...")
+            bar.empty()
 
-            try:
-                result = scrape_website(url, use_selenium=force_selenium, wait_time=wait_time)
-                progress.progress(50, text="Extracting content...")
-                html = result["html"]
+        except Exception as exc:
+            bar.empty()
+            st.error(f"Scrape failed: {exc}")
+            st.stop()
 
-                body = extract_body_content(html)
-                cleaned = clean_body_content(body, aggressive=aggressive_clean)
-                article = extract_article_content(html)
-                metadata = extract_metadata(html, url)
-                structured = extract_structured_data(html)
+# ── Results ───────────────────────────────────────────────────────────────────
+if "result" in st.session_state:
+    r        = st.session_state.result
+    meta     = st.session_state.metadata
+    chunks   = st.session_state.chunks
+    struct   = st.session_state.structured
 
-                progress.progress(80, text="Processing...")
-                time.sleep(0.2)
+    # Stat bar
+    st.markdown(f"""
+    <div class='stat-row'>
+        <div class='stat-card'>
+            <div class='stat-label'>Method</div>
+            <div class='stat-value' style='font-size:0.9rem;letter-spacing:1px;'>
+                {r.get("method","—").upper()}
+            </div>
+        </div>
+        <div class='stat-card'>
+            <div class='stat-label'>Load Time</div>
+            <div class='stat-value'>{r.get("elapsed","—")}s</div>
+        </div>
+        <div class='stat-card'>
+            <div class='stat-label'>Words</div>
+            <div class='stat-value'>{meta.get("word_count",0):,}</div>
+        </div>
+        <div class='stat-card'>
+            <div class='stat-label'>Links</div>
+            <div class='stat-value'>{len(meta.get("links",[]))}</div>
+        </div>
+        <div class='stat-card'>
+            <div class='stat-label'>Images</div>
+            <div class='stat-value'>{len(meta.get("images",[]))}</div>
+        </div>
+        <div class='stat-card'>
+            <div class='stat-label'>Chunks</div>
+            <div class='stat-value'>{len(chunks)}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-                st.session_state.update({
-                    "html": html,
-                    "body": body,
-                    "cleaned": cleaned,
-                    "article": article,
-                    "metadata": metadata,
-                    "structured": structured,
-                    "dom_chunks": split_dom_content(cleaned, chunk_size),
-                    "scrape_result": result,
-                    "url": url,
-                })
-                progress.progress(100, text="Done!")
-                time.sleep(0.3)
-                progress.empty()
-
-            except Exception as e:
-                progress.empty()
-                st.error(f"Scrape failed: {e}")
-                st.stop()
-
-# ─── Results Dashboard ────────────────────────────────────────────────────────
-if "scrape_result" in st.session_state:
-    r = st.session_state.scrape_result
-    meta = st.session_state.metadata
-    chunks = st.session_state.dom_chunks
-
-    # ── Stats Row ──
-    st.markdown('<div class="section-title">📊 Scrape Intelligence Report</div>', unsafe_allow_html=True)
-    c1, c2, c3, c4, c5 = st.columns(5)
-
-    with c1:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Method</div>
-            <div class="metric-value" style="font-size:1rem;">{r.get("method","—").upper()}</div>
-        </div>""", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Load time</div>
-            <div class="metric-value">{r.get("elapsed","—")}s</div>
-        </div>""", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Words</div>
-            <div class="metric-value">{meta.get("word_count",0):,}</div>
-        </div>""", unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Links</div>
-            <div class="metric-value">{len(meta.get("links",[]))}</div>
-        </div>""", unsafe_allow_html=True)
-    with c5:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Images</div>
-            <div class="metric-value">{len(meta.get("images",[]))}</div>
-        </div>""", unsafe_allow_html=True)
-
-    # ── Page Title / Description ──
+    # Page info
     if meta.get("title"):
         st.markdown(f"""
-        <div style='margin:1rem 0; padding:1rem 1.2rem;
-             background:#0d1421; border:1px solid #1e2d45;
-             border-radius:10px;'>
-            <div style='color:#4a6fa5;font-size:0.7rem;letter-spacing:2px;font-family:Space Mono;'>PAGE TITLE</div>
-            <div style='color:#e2e8f0;font-size:1.1rem;font-weight:600;margin-top:4px;'>{meta["title"]}</div>
-            {f'<div style="color:#8892a4;font-size:0.85rem;margin-top:6px;">{meta["description"]}</div>' if meta.get("description") else ""}
+        <div class='page-card'>
+            <div class='page-card-title'>{meta["title"]}</div>
+            {'<div class="page-card-desc">' + meta["description"] + '</div>' if meta.get("description") else ""}
+            <div style='margin-top:8px;'>
+                <span class='method-badge'>{r.get("method","").upper()}</span>
+                <span style='font-family:DM Mono;font-size:0.68rem;color:#888;margin-left:10px;'>
+                    {r.get("timestamp","")[:19].replace("T","  ")}
+                </span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.divider()
-
-    # ── Tabs ──
+    # Tabs
     tab_content, tab_meta, tab_ai, tab_export = st.tabs([
-        "📄  CONTENT",
-        "🔍  METADATA",
-        "🧠  AI PARSE",
-        "⬇  EXPORT",
+        "Content", "Metadata", "AI Analysis", "Export"
     ])
 
-    # ── Tab: Content ──
+    # ── Content tab ──────────────────────────────────────────────────────────
     with tab_content:
-        view_mode = st.radio(
-            "View",
+        view = st.radio(
+            "",
             ["Article Extract", "Cleaned Text", "Raw HTML"],
             horizontal=True,
             label_visibility="collapsed",
         )
 
-        if view_mode == "Article Extract":
-            st.markdown('<div class="section-title">▸ Smart Article Extraction</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="result-box">{st.session_state.article[:8000]}</div>', unsafe_allow_html=True)
+        if view == "Article Extract":
+            st.markdown('<div class="sec-label">Smart Article Extraction</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="result-block">{st.session_state.article[:10000]}</div>',
+                unsafe_allow_html=True
+            )
 
-        elif view_mode == "Cleaned Text":
-            st.markdown('<div class="section-title">▸ Cleaned Text Content</div>', unsafe_allow_html=True)
-            with st.expander(f"View cleaned content ({len(chunks)} chunk(s))", expanded=True):
-                st.text_area("", st.session_state.cleaned[:10000], height=350,
+        elif view == "Cleaned Text":
+            st.markdown('<div class="sec-label">Cleaned Text Content</div>', unsafe_allow_html=True)
+            with st.expander(f"View text  ({len(chunks)} chunk(s))", expanded=True):
+                st.text_area("", st.session_state.cleaned[:12000], height=340,
                              label_visibility="collapsed")
 
         else:
-            st.markdown('<div class="section-title">▸ Raw HTML</div>', unsafe_allow_html=True)
-            with st.expander("Raw HTML source"):
+            st.markdown('<div class="sec-label">Raw HTML Source</div>', unsafe_allow_html=True)
+            with st.expander("View HTML"):
                 st.code(st.session_state.html[:20000], language="html")
 
-        # Headings
         headings = meta.get("headings", {})
         if headings:
-            st.markdown('<div class="section-title">▸ Page Structure</div>', unsafe_allow_html=True)
-            for level, items in headings.items():
-                indent = int(level[1:]) - 1
-                for item in items[:8]:
-                    color = ["#00d4ff","#7b2ff7","#ff6b6b","#ffaa00","#00ff88","#ff66cc"][int(level[1:])-1]
+            st.markdown('<div class="sec-label">Page Structure</div>', unsafe_allow_html=True)
+            colors = {"h1": "#c84b2f", "h2": "#1a1a1a", "h3": "#555",
+                      "h4": "#777", "h5": "#999", "h6": "#aaa"}
+            for lvl, items in headings.items():
+                indent = (int(lvl[1:]) - 1) * 18
+                for item in items[:10]:
                     st.markdown(
-                        f'<div style="padding-left:{indent*20}px;color:{color};'
-                        f'font-family:Space Mono;font-size:0.8rem;margin:3px 0;">'
-                        f'<span style="opacity:0.4">{level.upper()} </span>{item}</div>',
-                        unsafe_allow_html=True
+                        f'<div class="heading-row" style="padding-left:{indent}px;">'
+                        f'<span class="lvl" style="color:{colors.get(lvl,"#888")}">{lvl}</span>'
+                        f'{item}</div>',
+                        unsafe_allow_html=True,
                     )
 
-    # ── Tab: Metadata ──
+    # ── Metadata tab ─────────────────────────────────────────────────────────
     with tab_meta:
-        col_m1, col_m2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
-        with col_m1:
-            st.markdown('<div class="section-title">▸ SEO & Open Graph</div>', unsafe_allow_html=True)
-            seo_data = {
-                "Title": meta.get("title",""),
-                "Description": meta.get("description",""),
-                "Keywords": meta.get("keywords",""),
-                "Language": meta.get("language",""),
-                "Canonical": meta.get("canonical",""),
+        with col1:
+            st.markdown('<div class="sec-label">SEO & Page Info</div>', unsafe_allow_html=True)
+            seo = {
+                "Title": meta.get("title", ""),
+                "Description": meta.get("description", ""),
+                "Keywords": meta.get("keywords", ""),
+                "Language": meta.get("language", ""),
+                "Canonical": meta.get("canonical", ""),
             }
-            for k, v in seo_data.items():
+            for k, v in seo.items():
                 if v:
-                    st.markdown(f"""
-                    <div style='margin-bottom:0.6rem;'>
-                        <span style='color:#4a6fa5;font-size:0.7rem;font-family:Space Mono;
-                        letter-spacing:1px;text-transform:uppercase;'>{k}</span><br>
-                        <span style='color:#e2e8f0;font-size:0.85rem;'>{v[:200]}</span>
-                    </div>""", unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div style="margin-bottom:0.8rem;">'
+                        f'<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2px;'
+                        f'text-transform:uppercase;color:#888;">{k}</div>'
+                        f'<div style="font-size:0.88rem;color:#1a1a1a;margin-top:2px;">{v[:220]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
 
             og = meta.get("og", {})
             if og:
-                st.markdown('<div class="section-title">▸ Open Graph Tags</div>', unsafe_allow_html=True)
+                st.markdown('<div class="sec-label">Open Graph</div>', unsafe_allow_html=True)
                 for k, v in og.items():
-                    st.markdown(f'<span class="badge badge-info">og:{k}</span> '
-                               f'<span style="font-size:0.82rem;color:#c8d0dc;">{str(v)[:100]}</span><br>',
-                               unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div style="font-family:DM Mono;font-size:0.75rem;margin:3px 0;">'
+                        f'<span style="color:#c84b2f;">og:{k}</span>'
+                        f'<span style="color:#666;margin-left:8px;">{str(v)[:100]}</span></div>',
+                        unsafe_allow_html=True,
+                    )
 
-        with col_m2:
-            st.markdown('<div class="section-title">▸ Discovered Contacts</div>', unsafe_allow_html=True)
+        with col2:
+            st.markdown('<div class="sec-label">Contacts & Socials</div>', unsafe_allow_html=True)
+
             emails = meta.get("emails", [])
-            phones = meta.get("phone_numbers", [])
-
             if emails:
-                st.markdown("**Emails found:**")
-                for e in emails[:10]:
-                    st.markdown(f'<span class="badge badge-success">✉ {e}</span><br>',
-                               unsafe_allow_html=True)
-            if phones:
-                st.markdown("**Phone numbers:**")
-                for p in phones[:5]:
-                    st.markdown(f'<span class="badge badge-warn">📞 {p}</span><br>',
-                               unsafe_allow_html=True)
-            if not emails and not phones:
-                st.caption("No contact info detected")
+                st.markdown(
+                    '<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2px;'
+                    'text-transform:uppercase;color:#888;margin-bottom:4px;">Emails</div>',
+                    unsafe_allow_html=True,
+                )
+                for e in emails[:8]:
+                    st.markdown(
+                        f'<div style="font-family:DM Mono;font-size:0.8rem;padding:2px 0;'
+                        f'color:#1a1a1a;">{e}</div>', unsafe_allow_html=True
+                    )
 
-            # Social links
+            phones = meta.get("phone_numbers", [])
+            if phones:
+                st.markdown(
+                    '<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2px;'
+                    'text-transform:uppercase;color:#888;margin:0.8rem 0 4px;">Phones</div>',
+                    unsafe_allow_html=True,
+                )
+                for p in phones[:5]:
+                    st.markdown(
+                        f'<div style="font-family:DM Mono;font-size:0.8rem;color:#1a1a1a;">{p}</div>',
+                        unsafe_allow_html=True,
+                    )
+
             socials = list(set(meta.get("social_links", [])))
             if socials:
-                st.markdown('<div class="section-title">▸ Social Links</div>', unsafe_allow_html=True)
-                for s in socials[:10]:
-                    st.markdown(f'<a href="{s}" style="color:#7b2ff7;font-size:0.8rem;'
-                               f'font-family:Space Mono;display:block;margin:3px 0;" '
-                               f'target="_blank">{s[:60]}</a>', unsafe_allow_html=True)
+                st.markdown(
+                    '<div style="font-family:DM Mono;font-size:0.65rem;letter-spacing:2px;'
+                    'text-transform:uppercase;color:#888;margin:0.8rem 0 4px;">Social Links</div>',
+                    unsafe_allow_html=True,
+                )
+                for s in socials[:8]:
+                    st.markdown(
+                        f'<a href="{s}" target="_blank" style="display:block;font-family:DM Mono;'
+                        f'font-size:0.75rem;color:#c84b2f;text-decoration:none;margin:3px 0;'
+                        f'word-break:break-all;">{s[:70]}</a>',
+                        unsafe_allow_html=True,
+                    )
 
-        # Images table
         images = meta.get("images", [])
         if images:
-            st.markdown('<div class="section-title">▸ Images Detected</div>', unsafe_allow_html=True)
-            df_imgs = pd.DataFrame(images[:50])
-            st.dataframe(df_imgs, use_container_width=True, hide_index=True)
+            st.markdown('<div class="sec-label">Images Found</div>', unsafe_allow_html=True)
+            st.dataframe(pd.DataFrame(images[:50]), use_container_width=True, hide_index=True)
 
-        # Structured data / tables
-        tables = st.session_state.structured.get("tables", [])
+        tables = struct.get("tables", [])
         if tables:
-            st.markdown('<div class="section-title">▸ Page Tables</div>', unsafe_allow_html=True)
-            for i, table in enumerate(tables[:3]):
-                with st.expander(f"Table {i+1} ({len(table)} rows)"):
+            st.markdown('<div class="sec-label">Embedded Tables</div>', unsafe_allow_html=True)
+            for i, tbl in enumerate(tables[:3]):
+                with st.expander(f"Table {i+1}  —  {len(tbl)} rows"):
                     try:
-                        st.dataframe(pd.DataFrame(table), use_container_width=True)
-                    except:
-                        st.json(table)
+                        st.dataframe(pd.DataFrame(tbl), use_container_width=True)
+                    except Exception:
+                        st.json(tbl)
 
-        json_ld = st.session_state.structured.get("json_ld", [])
+        json_ld = struct.get("json_ld", [])
         if json_ld:
-            st.markdown('<div class="section-title">▸ JSON-LD Structured Data</div>', unsafe_allow_html=True)
-            with st.expander("JSON-LD"):
+            st.markdown('<div class="sec-label">JSON-LD Structured Data</div>', unsafe_allow_html=True)
+            with st.expander("View JSON-LD"):
                 st.json(json_ld)
 
-    # ── Tab: AI Parse ──
+    # ── AI tab ───────────────────────────────────────────────────────────────
     with tab_ai:
         if not ai_enabled:
-            st.info("Enable AI Parsing in the sidebar to use this feature.")
+            st.info("Enter your Gemini API key in the sidebar to enable AI analysis. "
+                    "Get a free key at https://aistudio.google.com/app/apikey")
         else:
-            st.markdown('<div class="section-title">🧠 AI Extraction Engine</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sec-label">AI Extraction  —  Gemini 1.5 Flash</div>',
+                        unsafe_allow_html=True)
 
-            col_q1, col_q2 = st.columns(2)
-            with col_q1:
-                # Quick presets
-                preset = st.selectbox("Quick presets", [
-                    "Custom query...",
+            col_p1, col_p2 = st.columns([3, 2])
+            with col_p1:
+                preset = st.selectbox("Preset tasks", [
+                    "Custom query",
                     "Extract all prices and product names",
-                    "Get all article headlines",
+                    "Extract all article headlines",
                     "Extract contact information",
-                    "List all links and their anchor text",
+                    "List all links with anchor text",
                     "Extract company name, address, and hours",
-                    "Get all dates and events mentioned",
-                    "Extract review scores and sentiments",
-                    "Pull job titles and company names",
+                    "Extract all dates and events",
+                    "Extract review scores and ratings",
+                    "Extract job titles and company names",
+                    "Pull all phone numbers and emails",
                 ])
-            with col_q2:
-                ai_mode = st.radio("Mode", ["Extract", "Summarize"], horizontal=True)
+            with col_p2:
+                mode = st.radio("Mode", ["Extract", "Summarize"], horizontal=True)
 
-            parse_description = ""
-            if preset == "Custom query..." or ai_mode == "Summarize":
-                parse_description = st.text_area(
-                    "Describe what to extract" if ai_mode == "Extract" else "Summarization notes (optional)",
-                    height=80,
-                    placeholder="e.g. Extract all product names with their prices and ratings...",
+            if preset == "Custom query" or mode == "Summarize":
+                task = st.text_area(
+                    "Describe your extraction task" if mode == "Extract"
+                    else "Optional notes for the summary",
+                    height=70,
+                    placeholder="e.g. Extract all product names with prices and availability...",
                 )
             else:
-                parse_description = preset
-                st.info(f"Preset: **{preset}**")
+                task = preset
+                st.markdown(
+                    f'<div style="font-family:DM Mono;font-size:0.78rem;color:#888;'
+                    f'padding:0.5rem 0;">Task: {preset}</div>',
+                    unsafe_allow_html=True,
+                )
 
-            col_parse_btn, col_clear_btn = st.columns([3, 1])
-            with col_parse_btn:
-                parse_btn = st.button("🧠 RUN AI ANALYSIS", use_container_width=True)
-            with col_clear_btn:
-                if st.button("CLEAR", use_container_width=True):
+            col_run, col_clr = st.columns([4, 1])
+            with col_run:
+                run_btn = st.button("Run Analysis", use_container_width=True)
+            with col_clr:
+                if st.button("Clear", use_container_width=True):
                     st.session_state.pop("ai_result", None)
                     st.rerun()
 
-            if parse_btn:
-                if ai_mode == "Summarize":
-                    with st.spinner("Generating intelligent summary..."):
+            if run_btn:
+                if mode == "Summarize":
+                    with st.spinner("Generating summary..."):
                         try:
-                            result_text = summarize_with_together(chunks)
-                            st.session_state.ai_result = result_text
-                        except Exception as e:
-                            st.error(f"AI error: {e}")
+                            st.session_state.ai_result = summarize_with_gemini(chunks)
+                        except Exception as exc:
+                            st.error(str(exc))
                 else:
-                    if not parse_description:
-                        st.warning("Describe what to extract or choose a preset")
+                    if not task:
+                        st.warning("Describe what to extract or select a preset.")
                     else:
-                        with st.spinner(f"Analyzing {len(chunks)} chunk(s)..."):
-                            progress2 = st.progress(0)
-                            try:
-                                result_text = parse_with_together(chunks, parse_description)
-                                progress2.progress(100)
-                                progress2.empty()
-                                st.session_state.ai_result = result_text
-                            except Exception as e:
-                                progress2.empty()
-                                st.error(f"AI error: {e}")
+                        bar2 = st.progress(0, text="Starting analysis...")
+                        try:
+                            # Process and update bar incrementally
+                            from parse import _model, EXTRACT_PROMPT
+                            model = _model()
+                            results = []
+                            for i, chunk in enumerate(chunks, 1):
+                                bar2.progress(int(i / len(chunks) * 100),
+                                              text=f"Chunk {i} of {len(chunks)}")
+                                prompt = EXTRACT_PROMPT.format(content=chunk, task=task)
+                                resp = model.generate_content(prompt)
+                                text = resp.text.strip()
+                                if text and text != "NO_MATCH":
+                                    results.append(text)
+                            bar2.empty()
+                            st.session_state.ai_result = (
+                                "\n\n".join(results) if results else "No matching content found."
+                            )
+                        except Exception as exc:
+                            bar2.empty()
+                            st.error(str(exc))
 
             if "ai_result" in st.session_state:
-                st.markdown('<div class="section-title">▸ AI Analysis Result</div>',
-                           unsafe_allow_html=True)
-                st.markdown(f'<div class="result-box">{st.session_state.ai_result}</div>',
-                           unsafe_allow_html=True)
+                st.markdown('<div class="sec-label">Result</div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="result-block">{st.session_state.ai_result}</div>',
+                    unsafe_allow_html=True,
+                )
                 st.download_button(
-                    "⬇ Download Result",
+                    "Download Result",
                     st.session_state.ai_result,
-                    file_name="ai_extract.txt",
+                    file_name=f"scrapipy_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
                     mime="text/plain",
                 )
 
-    # ── Tab: Export ──
+    # ── Export tab ───────────────────────────────────────────────────────────
     with tab_export:
-        st.markdown('<div class="section-title">⬇ Export Scraped Data</div>', unsafe_allow_html=True)
-        col_e1, col_e2, col_e3 = st.columns(3)
+        st.markdown('<div class="sec-label">Export Scraped Data</div>', unsafe_allow_html=True)
 
-        with col_e1:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
             st.download_button(
-                "📄 Cleaned Text (.txt)",
+                "Cleaned Text  (.txt)",
                 st.session_state.cleaned,
-                file_name=f"scraped_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                file_name=f"scrapipy_text_{ts}.txt",
                 mime="text/plain",
                 use_container_width=True,
             )
-
-        with col_e2:
-            meta_export = {
-                "url": st.session_state.url,
-                "scraped_at": st.session_state.scrape_result.get("timestamp"),
-                "method": st.session_state.scrape_result.get("method"),
+        with c2:
+            export_json = json.dumps({
+                "url": st.session_state.scraped_url,
+                "scraped_at": r.get("timestamp"),
+                "method": r.get("method"),
                 "metadata": meta,
-                "structured_data": st.session_state.structured,
-            }
+                "structured_data": struct,
+            }, indent=2, ensure_ascii=False)
             st.download_button(
-                "🔍 Metadata (.json)",
-                json.dumps(meta_export, indent=2, ensure_ascii=False),
-                file_name=f"metadata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                "Metadata  (.json)",
+                export_json,
+                file_name=f"scrapipy_meta_{ts}.json",
                 mime="application/json",
                 use_container_width=True,
             )
-
-        with col_e3:
+        with c3:
             if meta.get("links"):
                 df_links = pd.DataFrame(meta["links"])
                 st.download_button(
-                    "🔗 All Links (.csv)",
+                    "All Links  (.csv)",
                     df_links.to_csv(index=False),
-                    file_name=f"links_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    file_name=f"scrapipy_links_{ts}.csv",
                     mime="text/csv",
                     use_container_width=True,
                 )
 
-        # Full HTML download
-        st.markdown('<div class="section-title">▸ Raw Exports</div>', unsafe_allow_html=True)
-        col_h1, col_h2 = st.columns(2)
-        with col_h1:
+        st.markdown('<div class="sec-label">Raw Exports</div>', unsafe_allow_html=True)
+        c4, c5 = st.columns(2)
+        with c4:
             st.download_button(
-                "🌐 Full HTML Source",
+                "Full HTML Source",
                 st.session_state.html,
-                file_name=f"page_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                file_name=f"scrapipy_page_{ts}.html",
                 mime="text/html",
                 use_container_width=True,
             )
-        with col_h2:
+        with c5:
             st.download_button(
-                "📰 Article Extract (.txt)",
+                "Article Extract  (.txt)",
                 st.session_state.article,
-                file_name=f"article_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                file_name=f"scrapipy_article_{ts}.txt",
                 mime="text/plain",
                 use_container_width=True,
             )
 
-        # Images export
         if meta.get("images"):
-            st.markdown('<div class="section-title">▸ Images List</div>', unsafe_allow_html=True)
-            df_img_export = pd.DataFrame(meta["images"])
+            st.markdown('<div class="sec-label">Images List</div>', unsafe_allow_html=True)
             st.download_button(
-                "🖼 Images List (.csv)",
-                df_img_export.to_csv(index=False),
-                file_name=f"images_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                "Images  (.csv)",
+                pd.DataFrame(meta["images"]).to_csv(index=False),
+                file_name=f"scrapipy_images_{ts}.csv",
                 mime="text/csv",
-                use_container_width=True,
             )
