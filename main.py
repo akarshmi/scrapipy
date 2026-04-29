@@ -26,288 +26,519 @@ st.set_page_config(
 
 # ── Typography + Design System ────────────────────────────────────────────────
 st.markdown("""
-<style>
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Enhanced backgrounds and borders */
 html, body, [class*="css"] {
     font-family: 'Syne', sans-serif;
     background: #f5f2ec;
     color: #1a1a1a;
 }
 
-.stApp { background: #f5f2ec; }
+.stApp { 
+    background: #f5f2ec;
+}
 
-/* ── Sidebar ── */
+/* ── Enhanced Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: #1a1a1a !important;
-    border-right: none;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    border-right: 2px solid #c84b2f !important;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
 }
 section[data-testid="stSidebar"] * {
-    color: #c8c0b0 !important;
+    color: #e8e4dc !important;
 }
 section[data-testid="stSidebar"] .stTextArea textarea,
 section[data-testid="stSidebar"] .stSelectbox > div > div {
-    background: #2a2a2a !important;
-    border-color: #3a3a3a !important;
-    color: #c8c0b0 !important;
+    background: #3a3a3a !important;
+    border: 2px solid #555 !important;
+    color: #ffffff !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.78rem !important;
+    font-size: 0.82rem !important;
+    padding: 8px !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-section[data-testid="stSidebar"] .stSlider > div { filter: invert(0.85); }
+section[data-testid="stSidebar"] .stTextArea textarea:focus,
+section[data-testid="stSidebar"] .stSelectbox > div > div:focus {
+    border-color: #c84b2f !important;
+    box-shadow: 0 0 10px rgba(200, 75, 47, 0.3);
+}
+section[data-testid="stSidebar"] .stSlider > div { 
+    filter: invert(0.9); 
+}
 
-/* ── Wordmark ── */
+/* ── Enhanced Wordmark ── */
 .wordmark {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 3.8rem;
-    letter-spacing: -4px;
+    font-size: 5rem;
+    letter-spacing: -5px;
     color: #1a1a1a;
     line-height: 1;
     margin-bottom: 0;
+    text-shadow: 2px 2px 0px rgba(200, 75, 47, 0.1);
+    transition: all 0.3s ease;
+}
+.wordmark:hover {
+    transform: scale(1.02);
 }
 .wordmark span {
     color: #c84b2f;
+    text-shadow: 0 0 20px rgba(200, 75, 47, 0.3);
 }
 .tagline {
     font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 3px;
-    color: #888;
+    font-size: 0.78rem;
+    letter-spacing: 4px;
+    color: #666;
     text-transform: uppercase;
-    margin-top: 6px;
+    margin-top: 8px;
+    font-weight: 500;
+    border-top: 2px solid #c84b2f;
+    padding-top: 8px;
+    display: inline-block;
 }
 
-/* ── URL bar ── */
+/* ── Enhanced URL bar ── */
 .stTextInput input {
-    background: #fff !important;
-    border: 1.5px solid #1a1a1a !important;
+    background: #ffffff !important;
+    border: 2px solid #1a1a1a !important;
     border-radius: 0 !important;
     color: #1a1a1a !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.9rem !important;
-    padding: 0.7rem 1rem !important;
-    transition: border-color 0.15s;
+    font-size: 0.95rem !important;
+    padding: 0.8rem 1.2rem !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .stTextInput input:focus {
     border-color: #c84b2f !important;
-    box-shadow: none !important;
+    box-shadow: 0 4px 12px rgba(200, 75, 47, 0.2) !important;
+    transform: translateY(-1px);
+}
+.stTextInput input::placeholder {
+    color: #999 !important;
 }
 
-/* ── Buttons ── */
+/* ── Enhanced Buttons ── */
 .stButton button {
-    background: #1a1a1a !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%) !important;
     color: #f5f2ec !important;
     border: none !important;
     border-radius: 0 !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 2px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 3px !important;
     text-transform: uppercase !important;
-    padding: 0.65rem 1.4rem !important;
-    transition: background 0.15s !important;
+    padding: 0.75rem 1.6rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+.stButton button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+}
+.stButton button:hover::before {
+    left: 100%;
 }
 .stButton button:hover {
-    background: #c84b2f !important;
+    background: linear-gradient(135deg, #c84b2f 0%, #e85d3f 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(200, 75, 47, 0.3) !important;
+}
+.stButton button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(200, 75, 47, 0.2) !important;
 }
 
-/* ── Stat cards ── */
-.stat-row { display: flex; gap: 1px; margin: 1.5rem 0; background: #d4d0c8; }
-.stat-card {
-    background: #f5f2ec;
-    flex: 1;
-    padding: 1.2rem 1.4rem;
-    border-bottom: 3px solid transparent;
-    transition: border-color 0.2s;
+/* ── Enhanced Stat cards ── */
+.stat-row { 
+    display: flex; 
+    gap: 8px; 
+    margin: 2rem 0; 
+    background: transparent;
+    flex-wrap: wrap;
 }
-.stat-card:hover { border-bottom-color: #c84b2f; }
+.stat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafaf8 100%);
+    flex: 1;
+    min-width: 120px;
+    padding: 1.5rem 1.8rem;
+    border: 1px solid #ddd;
+    border-bottom: 4px solid #1a1a1a;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+.stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #c84b2f, transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.stat-card:hover::after {
+    opacity: 1;
+}
+.stat-card:hover {
+    border-bottom-color: #c84b2f;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
 .stat-label {
     font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 2.5px;
-    color: #888;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: #666;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    font-weight: 500;
 }
 .stat-value {
     font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.6rem;
+    font-weight: 800;
+    font-size: 1.8rem;
     color: #1a1a1a;
     line-height: 1;
+    animation: fadeInUp 0.6s ease;
 }
 
-/* ── Section label ── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Enhanced Section label ── */
 .sec-label {
     font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 3px;
+    font-size: 0.7rem;
+    letter-spacing: 4px;
     text-transform: uppercase;
-    color: #888;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #d4d0c8;
-    margin: 1.8rem 0 1rem;
+    color: #1a1a1a;
+    padding-bottom: 0.8rem;
+    border-bottom: 3px solid #c84b2f;
+    margin: 2rem 0 1.2rem;
+    font-weight: 600;
+    background: linear-gradient(90deg, #c84b2f 0%, transparent 50%);
+    background-size: 200% 3px;
+    background-repeat: no-repeat;
+    background-position: bottom;
 }
 
-/* ── Tabs ── */
+/* ── Enhanced Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: transparent;
-    border-bottom: 1px solid #d4d0c8;
-    gap: 0;
+    background: linear-gradient(90deg, transparent 0%, #f0ede6 50%, transparent 100%);
+    border-bottom: 2px solid #d4d0c8;
+    gap: 8px;
+    padding: 0.5rem;
 }
 .stTabs [data-baseweb="tab"] {
     font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 2.5px;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
     text-transform: uppercase;
     color: #888;
-    padding: 0.7rem 1.4rem;
+    padding: 0.8rem 1.6rem;
     background: transparent;
     border-radius: 0;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.stTabs [data-baseweb="tab"]::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: #c84b2f;
+    transition: width 0.3s ease;
 }
 .stTabs [aria-selected="true"] {
     color: #1a1a1a !important;
-    border-bottom: 2px solid #c84b2f !important;
-    background: transparent !important;
+    background: rgba(200, 75, 47, 0.05) !important;
+}
+.stTabs [aria-selected="true"]::before {
+    width: 100%;
 }
 
-/* ── Text areas ── */
+/* ── Enhanced Text areas ── */
 .stTextArea textarea {
-    background: #fff !important;
-    border: 1.5px solid #d4d0c8 !important;
+    background: #ffffff !important;
+    border: 2px solid #d4d0c8 !important;
     border-radius: 0 !important;
     color: #1a1a1a !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.8rem !important;
+    font-size: 0.85rem !important;
+    line-height: 1.6 !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
 }
 .stTextArea textarea:focus {
-    border-color: #1a1a1a !important;
-    box-shadow: none !important;
+    border-color: #c84b2f !important;
+    box-shadow: 0 0 20px rgba(200, 75, 47, 0.15) !important;
 }
 
-/* ── Expander ── */
+/* ── Enhanced Expander ── */
 .streamlit-expanderHeader {
-    background: #fff !important;
-    border: 1px solid #d4d0c8 !important;
+    background: linear-gradient(135deg, #ffffff, #fafaf8) !important;
+    border: 2px solid #d4d0c8 !important;
     border-radius: 0 !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.72rem !important;
-    color: #444 !important;
-    letter-spacing: 1px !important;
+    font-size: 0.76rem !important;
+    color: #1a1a1a !important;
+    letter-spacing: 2px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease;
+    padding: 0.8rem 1.2rem !important;
+}
+.streamlit-expanderHeader:hover {
+    border-color: #c84b2f !important;
+    background: linear-gradient(135deg, #fff5f2, #ffffff) !important;
 }
 
-/* ── Result display ── */
+/* ── Enhanced Result display ── */
 .result-block {
-    background: #fff;
-    border-left: 3px solid #c84b2f;
-    padding: 1.2rem 1.4rem;
+    background: linear-gradient(135deg, #ffffff, #fcfcf9);
+    border-left: 5px solid #c84b2f;
+    padding: 1.5rem 1.8rem;
     font-family: 'DM Mono', monospace;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     line-height: 1.8;
     white-space: pre-wrap;
     word-break: break-word;
     max-height: 480px;
     overflow-y: auto;
     color: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    animation: slideIn 0.5s ease;
 }
 
-/* ── Page info card ── */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ── Enhanced Page info card ── */
 .page-card {
-    background: #fff;
-    border: 1px solid #d4d0c8;
-    padding: 1.2rem 1.4rem;
-    margin: 1rem 0;
+    background: linear-gradient(135deg, #ffffff, #fafaf8);
+    border: 2px solid #1a1a1a;
+    padding: 1.5rem 1.8rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+.page-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 .page-card-title {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.3rem;
+    font-weight: 800;
     color: #1a1a1a;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    line-height: 1.3;
 }
 .page-card-desc {
     font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    color: #666;
-    line-height: 1.5;
+    font-size: 0.8rem;
+    color: #555;
+    line-height: 1.6;
 }
 
-/* ── Method badge ── */
+/* ── Enhanced Method badge ── */
 .method-badge {
     display: inline-block;
-    background: #1a1a1a;
+    background: linear-gradient(135deg, #1a1a1a, #333);
     color: #f5f2ec;
     font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 2px;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    padding: 3px 10px;
+    padding: 5px 14px;
+    border: 1px solid #555;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
 }
 
-/* ── Heading structure ── */
+/* ── Enhanced Heading structure ── */
 .heading-row {
     font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    padding: 3px 0;
+    font-size: 0.8rem;
+    padding: 5px 0;
     color: #1a1a1a;
-    border-bottom: 1px dashed #e8e4dc;
+    border-bottom: 1px solid #e8e4dc;
+    transition: all 0.3s ease;
 }
-.heading-row .lvl { color: #c84b2f; margin-right: 6px; }
+.heading-row:hover {
+    background: rgba(200, 75, 47, 0.05);
+    padding-left: 8px;
+}
+.heading-row .lvl { 
+    color: #c84b2f; 
+    margin-right: 8px; 
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+}
 
-/* ── Selectbox ── */
+/* ── Enhanced Selectbox & Radio ── */
 .stSelectbox > div > div {
     border-radius: 0 !important;
-    border-color: #d4d0c8 !important;
+    border-color: #1a1a1a !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.82rem !important;
+    font-size: 0.85rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    background: #ffffff !important;
+}
+.stSelectbox > div > div:focus {
+    border-color: #c84b2f !important;
+    box-shadow: 0 0 15px rgba(200, 75, 47, 0.2) !important;
 }
 
-/* ── Radio ── */
 .stRadio label {
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 1px !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 2px !important;
+    font-weight: 600 !important;
+    transition: color 0.3s ease;
+}
+.stRadio label:hover {
+    color: #c84b2f !important;
 }
 
-/* ── Divider ── */
-hr { border-color: #d4d0c8 !important; margin: 1.5rem 0 !important; }
+/* ── Enhanced Divider ── */
+hr { 
+    border: none !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, #1a1a1a, #d4d0c8, transparent) !important;
+    margin: 2rem 0 !important; 
+}
 
-/* ── Alerts ── */
+/* ── Enhanced Alerts ── */
 .stAlert {
     border-radius: 0 !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.78rem !important;
+    font-size: 0.8rem !important;
+    border-left: 4px solid !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-weight: 500;
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #f5f2ec; }
-::-webkit-scrollbar-thumb { background: #d4d0c8; }
-::-webkit-scrollbar-thumb:hover { background: #c84b2f; }
+/* ── Enhanced Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { 
+    background: #f5f2ec; 
+    border: 1px solid #ddd;
+}
+::-webkit-scrollbar-thumb { 
+    background: linear-gradient(135deg, #d4d0c8, #aaa); 
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: linear-gradient(135deg, #c84b2f, #e85d3f); 
+}
 
-/* ── Hide default Streamlit UI chrome ── */
-#MainMenu, footer, header { visibility: hidden; }
-
-/* ── Download buttons ── */
+/* ── Enhanced Download buttons ── */
 .stDownloadButton button {
     background: transparent !important;
     color: #1a1a1a !important;
-    border: 1.5px solid #1a1a1a !important;
+    border: 2px solid #1a1a1a !important;
     font-family: 'DM Mono', monospace !important;
-    font-size: 0.7rem !important;
-    letter-spacing: 2px !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 3px !important;
     text-transform: uppercase !important;
     border-radius: 0 !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 .stDownloadButton button:hover {
     background: #1a1a1a !important;
     color: #f5f2ec !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* ── Toggle ── */
-.stToggle label { font-family: 'DM Mono', monospace !important; font-size: 0.78rem !important; }
-</style>
+/* ── Enhanced Toggle ── */
+.stToggle label { 
+    font-family: 'DM Mono', monospace !important; 
+    font-size: 0.8rem !important; 
+    font-weight: 600 !important;
+    letter-spacing: 1px !important;
+}
+.stToggle [role="switch"] {
+    border: 2px solid #1a1a1a !important;
+}
+
+/* ── Loading animations ── */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #1a1a1a, #c84b2f) !important;
+}
+
+/* ── Dataframe enhancements ── */
+.stDataFrame {
+    border: 1px solid #ddd !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.stDataFrame [data-testid="stTable"] {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.75rem !important;
+}
+
+/* ── Links in content ── */
+a {
+    color: #c84b2f !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid transparent;
+}
+a:hover {
+    border-bottom: 2px solid #c84b2f !important;
+    color: #e85d3f !important;
+}
+
+/* ── Sidebar button special styling ── */
+section[data-testid="stSidebar"] .stButton button {
+    background: linear-gradient(135deg, #c84b2f, #e85d3f) !important;
+    border: 2px solid #ff6b4a !important;
+}
+section[data-testid="stSidebar"] .stButton button:hover {
+    background: linear-gradient(135deg, #e85d3f, #ff7b5a) !important;
+    box-shadow: 0 4px 15px rgba(200, 75, 47, 0.4) !important;
+}
+
 """, unsafe_allow_html=True)
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
